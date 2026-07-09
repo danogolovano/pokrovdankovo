@@ -1,0 +1,1333 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Храм Покрова Пресвятой Богородицы</title>
+    
+    <!-- Подключаем Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <style>
+        /* ===== ОБЩИЙ СТИЛЬ ===== */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Georgia', 'Times New Roman', serif;
+            background: #f5efe6;
+            padding: 16px;
+            color: #2c1810;
+            min-height: 100vh;
+        }
+        
+        /* ===== КАРТОЧКА В ВИДЕ ЦЕРКОВНОЙ ЗАПИСКИ ===== */
+        .note-card {
+            max-width: 500px;
+            margin: 0 auto;
+            background: #fcf8f0;
+            border: 2px solid #c9ad7a;
+            border-radius: 12px;
+            padding: 28px 24px 32px;
+            box-shadow: 0 8px 32px rgba(44, 24, 16, 0.15);
+            position: relative;
+        }
+        
+        .note-card::before {
+            content: "✠ ✠ ✠";
+            display: block;
+            text-align: center;
+            font-size: 20px;
+            color: #b8944c;
+            letter-spacing: 8px;
+            margin-bottom: 12px;
+        }
+        
+        .note-title {
+            text-align: center;
+            font-size: 26px;
+            font-weight: bold;
+            color: #2c1810;
+            border-bottom: 2px solid #c9ad7a;
+            padding-bottom: 14px;
+            margin-bottom: 20px;
+        }
+        
+        .note-title span { color: #b8944c; }
+        .note-subtitle {
+            text-align: center;
+            font-size: 14px;
+            color: #8a7a6a;
+            margin-top: -12px;
+            margin-bottom: 18px;
+        }
+        
+        /* ===== ПОЛЯ ФОРМЫ ===== */
+        .field-group {
+            margin-bottom: 18px;
+        }
+        
+        .field-group label {
+            display: block;
+            font-size: 14px;
+            font-weight: bold;
+            color: #5a3e2b;
+            margin-bottom: 5px;
+        }
+        
+        .field-group select,
+        .field-group input {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid #d4c4a8;
+            border-radius: 8px;
+            font-size: 16px;
+            font-family: 'Georgia', serif;
+            background: white;
+            color: #2c1810;
+            transition: border-color 0.3s;
+        }
+        
+        .field-group select:focus,
+        .field-group input:focus {
+            outline: none;
+            border-color: #b8944c;
+            box-shadow: 0 0 0 3px rgba(184, 148, 76, 0.2);
+        }
+        
+        /* ===== ПОЛЯ ДЛЯ ИМЁН ===== */
+        .names-container {
+            margin: 16px 0 10px;
+        }
+        
+        .name-input-wrapper {
+            margin-bottom: 8px;
+            position: relative;
+        }
+        
+        .name-input-wrapper input {
+            width: 100%;
+            padding: 10px 14px 10px 38px;
+            border: 1px solid #d4c4a8;
+            border-radius: 8px;
+            font-size: 16px;
+            font-family: 'Georgia', serif;
+            background: white;
+        }
+        
+        .name-input-wrapper input:focus {
+            outline: none;
+            border-color: #b8944c;
+            box-shadow: 0 0 0 3px rgba(184, 148, 76, 0.15);
+        }
+        
+        .name-input-wrapper .number {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #b8944c;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        
+        .name-input-wrapper .number::before {
+            content: "✟";
+            margin-right: 4px;
+            font-size: 12px;
+        }
+        
+        .hint-text {
+            font-size: 13px;
+            color: #8a7a6a;
+            font-style: italic;
+            margin-top: 6px;
+            text-align: center;
+        }
+        
+        /* ===== КНОПКИ ===== */
+        .buttons-row {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+        }
+        
+        .btn {
+            flex: 1;
+            padding: 14px 12px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-family: 'Georgia', serif;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+        }
+        
+        .btn-primary {
+            background: #b8944c;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #a07d3a;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(184, 148, 76, 0.3);
+        }
+        
+        .btn-secondary {
+            background: #e8ddd0;
+            color: #5a3e2b;
+        }
+        .btn-secondary:hover {
+            background: #dccfc0;
+        }
+        
+        .btn-success {
+            background: #2d7d46;
+            color: white;
+        }
+        .btn-success:hover {
+            background: #23683a;
+        }
+        
+        .btn-danger {
+            background: #a05252;
+            color: white;
+        }
+        .btn-danger:hover {
+            background: #8b4545;
+        }
+        
+        .btn-admin {
+            background: #2c1810;
+            color: #c9ad7a;
+            padding: 8px 16px;
+            font-size: 13px;
+            border-radius: 6px;
+            border: 1px solid #c9ad7a;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .btn-admin:hover {
+            background: #4a2a1f;
+        }
+        
+        /* ===== АДМИН-ПАНЕЛЬ ===== */
+        .admin-panel {
+            max-width: 600px;
+            margin: 30px auto 0;
+            background: #fcf8f0;
+            border: 2px solid #c9ad7a;
+            border-radius: 12px;
+            padding: 24px;
+            display: none;
+        }
+        
+        .admin-panel.active {
+            display: block;
+        }
+        
+        .admin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #c9ad7a;
+            padding-bottom: 12px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        .admin-header h2 {
+            font-size: 20px;
+            color: #2c1810;
+        }
+        
+        .date-tabs {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+        
+        .date-tab {
+            padding: 6px 16px;
+            border: 1px solid #d4c4a8;
+            border-radius: 20px;
+            background: white;
+            cursor: pointer;
+            font-size: 14px;
+            font-family: 'Georgia', serif;
+            transition: all 0.3s;
+        }
+        .date-tab:hover { background: #f5efe6; }
+        .date-tab.active {
+            background: #b8944c;
+            color: white;
+            border-color: #b8944c;
+        }
+        
+        .service-section {
+            background: #f5efe6;
+            border-radius: 8px;
+            padding: 12px 16px;
+            margin-bottom: 12px;
+        }
+        
+        .service-section h4 {
+            color: #5a3e2b;
+            margin-bottom: 8px;
+            font-size: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .service-section .price-tag {
+            font-size: 13px;
+            color: #b8944c;
+            font-weight: normal;
+        }
+        
+        .service-section .names-list {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .service-section .names-list li {
+            padding: 4px 0 4px 20px;
+            border-bottom: 1px dashed #ddd0c0;
+            font-size: 15px;
+            position: relative;
+        }
+        
+        .service-section .names-list li::before {
+            content: "✟";
+            position: absolute;
+            left: 0;
+            color: #b8944c;
+            font-size: 12px;
+        }
+        
+        .copy-btn {
+            background: none;
+            border: 1px solid #c9ad7a;
+            padding: 4px 14px;
+            border-radius: 12px;
+            font-size: 12px;
+            cursor: pointer;
+            color: #5a3e2b;
+            margin-top: 6px;
+            transition: all 0.3s;
+            font-family: 'Georgia', serif;
+        }
+        .copy-btn:hover {
+            background: #c9ad7a;
+            color: white;
+        }
+        
+        /* ===== СООБЩЕНИЯ ===== */
+        .message {
+            padding: 14px;
+            border-radius: 8px;
+            margin-top: 16px;
+            text-align: center;
+            font-size: 15px;
+            display: none;
+        }
+        .message.success {
+            display: block;
+            background: #e8f5e9;
+            color: #2d7d46;
+            border: 1px solid #a5d6a7;
+        }
+        .message.error {
+            display: block;
+            background: #ffebee;
+            color: #c62828;
+            border: 1px solid #ef9a9a;
+        }
+        .message.info {
+            display: block;
+            background: #e3f2fd;
+            color: #0d47a1;
+            border: 1px solid #90caf9;
+        }
+        
+        /* ===== ОПЛАТА ===== */
+        .payment-section {
+            background: #f5efe6;
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 16px;
+            border: 1px solid #d4c4a8;
+        }
+        
+        .payment-section h3 {
+            color: #2c1810;
+            font-size: 18px;
+            margin-bottom: 12px;
+            text-align: center;
+        }
+        
+        .payment-details {
+            font-size: 14px;
+            line-height: 1.8;
+            color: #3a2a1a;
+        }
+        
+        .payment-details .label {
+            font-weight: bold;
+            color: #5a3e2b;
+        }
+        
+        .payment-total {
+            text-align: center;
+            font-size: 22px;
+            color: #b8944c;
+            margin: 12px 0;
+            padding: 12px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #c9ad7a;
+        }
+        
+        .payment-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 16px;
+        }
+        
+        .payment-actions .btn {
+            flex: 1;
+        }
+        
+        /* ===== МОДАЛЬНОЕ ОКНО ===== */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-overlay.active {
+            display: flex;
+        }
+        .modal-box {
+            background: #fcf8f0;
+            border: 2px solid #c9ad7a;
+            border-radius: 12px;
+            padding: 28px 24px 32px;
+            max-width: 440px;
+            width: 90%;
+            position: relative;
+        }
+        .modal-box .close-btn {
+            position: absolute;
+            top: 12px;
+            right: 16px;
+            font-size: 24px;
+            cursor: pointer;
+            color: #8a7a6a;
+            background: none;
+            border: none;
+        }
+        .modal-box h2 {
+            text-align: center;
+            color: #2c1810;
+            margin-bottom: 16px;
+        }
+        .modal-box .btn {
+            width: 100%;
+            margin-top: 12px;
+        }
+        
+        /* ===== ПЕРЕКЛЮЧАТЕЛЬ ===== */
+        .mode-toggle {
+            text-align: center;
+            margin-top: 20px;
+            padding-top: 16px;
+            border-top: 1px solid #d4c4a8;
+        }
+        
+        .hidden { display: none !important; }
+        
+        @media (max-width: 480px) {
+            .note-card { padding: 20px 16px 24px; }
+            .buttons-row { flex-direction: column; }
+            .payment-actions { flex-direction: column; }
+            .btn { padding: 12px; }
+            .admin-panel { padding: 16px; }
+        }
+        
+        /* Анимация загрузки */
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #b8944c;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 8px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ============================================================ -->
+<!-- ================ ОСНОВНАЯ КАРТОЧКА ========================== -->
+<!-- ============================================================ -->
+<div id="userMode" class="note-card">
+    <div class="note-title">
+        🕯️ Подача <span>записки</span>
+    </div>
+    <div class="note-subtitle">
+        Храм в честь Покрова Пресвятой Богородицы<br>
+        с. Данково, Каширский район, Воронежская область
+    </div>
+    
+    <!-- Поле: Дата службы -->
+    <div class="field-group">
+        <label>📅 Дата службы</label>
+        <select id="serviceDate" onchange="loadServiceTypes()">
+            <option value="">— загрузка дат... —</option>
+        </select>
+    </div>
+    
+    <!-- Поле: Вид поминовения -->
+    <div class="field-group">
+        <label>✝️ Вид поминовения</label>
+        <select id="serviceType" onchange="updatePrice()">
+            <option value="">— выберите вид —</option>
+        </select>
+    </div>
+    
+    <!-- Поля для имён -->
+    <div class="field-group">
+        <label>👤 Имена для поминовения</label>
+        <div class="names-container" id="namesContainer"></div>
+        <div class="hint-text">
+            ✟ Начните вводить имя — появится следующее поле ✟
+        </div>
+    </div>
+    
+    <!-- Информация о стоимости -->
+    <div id="priceDisplay" style="text-align:center; margin:8px 0; font-size:15px; color:#5a3e2b;">
+        Цена: 0 ₽ (0 имён × 0 ₽)
+    </div>
+    
+    <!-- Кнопки -->
+    <div class="buttons-row">
+        <button class="btn btn-primary" onclick="submitWithPayment()">
+            💰 К оплате
+        </button>
+        <button class="btn btn-secondary" onclick="submitWithoutPayment()">
+            🙏 Отправить
+        </button>
+    </div>
+    
+    <!-- Сообщение -->
+    <div id="userMessage" class="message"></div>
+</div>
+
+<!-- ============================================================ -->
+<!-- ================ АДМИН-ПАНЕЛЬ =============================== -->
+<!-- ============================================================ -->
+<div id="adminMode" class="admin-panel">
+    <div class="admin-header">
+        <h2>📋 Управление записками</h2>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <button class="btn-admin" onclick="refreshAdminData()">🔄 Обновить</button>
+        </div>
+    </div>
+    
+    <div class="date-tabs" id="dateTabs"></div>
+    <div id="adminContent">
+        <p style="color: #8a7a6a; text-align: center; padding: 20px;">
+            Выберите дату, чтобы увидеть записки
+        </p>
+    </div>
+    
+    <div style="margin-top: 20px; border-top: 1px solid #d4c4a8; padding-top: 16px;">
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <button class="btn-admin" onclick="openAddDateModal()">➕ Добавить дату</button>
+            <button class="btn-admin" onclick="openAddServiceTypeModal()">➕ Добавить вид</button>
+            <button class="btn-admin" onclick="manageDateServices()">📌 Управление видами на дату</button>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- ================ МОДАЛЬНОЕ ОКНО ============================= -->
+<!-- ============================================================ -->
+<div class="modal-overlay" id="modalOverlay">
+    <div class="modal-box">
+        <button class="close-btn" onclick="closeModal()">✕</button>
+        <h2 id="modalTitle">Заголовок</h2>
+        <div id="modalBody"></div>
+    </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- ================ ПЕРЕКЛЮЧАТЕЛЬ ============================== -->
+<!-- ============================================================ -->
+<div class="mode-toggle">
+    <button id="toggleModeBtn" class="btn-admin" onclick="toggleMode()">
+        🔐 Вход для администратора
+    </button>
+</div>
+
+<!-- ============================================================ -->
+<!-- ================ КОД ПРИЛОЖЕНИЯ ============================= -->
+<!-- ============================================================ -->
+<script>
+// ================================================================
+// 1. НАСТРОЙКИ SUPABASE (ЗАМЕНИТЕ НА СВОИ!)
+// ================================================================
+
+const SUPABASE_URL = 'https://fupntgnmagobmpjqrbbf.supabase.co';      // ← ВСТАВЬТЕ СВОЙ URL
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ1cG50Z25tYWdvYm1wanFyYmJmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM2MjYxMzYsImV4cCI6MjA5OTIwMjEzNn0.Iv6dXfi_DdfjOae8jmdMi9-4LrbNNEUNj5Dlnmsa4EI';                       // ← ВСТАВЬТЕ СВОЙ КЛЮЧ
+
+const supabase = supabaseClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ================================================================
+// 2. ПЕРЕМЕННЫЕ
+// ================================================================
+
+let nameCounter = 0;
+let currentPricePerName = 0;
+let currentServiceTypeId = null;
+let allServiceTypes = [];
+
+// ================================================================
+// 3. УПРАВЛЕНИЕ ПОЛЯМИ ДЛЯ ИМЁН
+// ================================================================
+
+function addNameField() {
+    nameCounter++;
+    const container = document.getElementById('namesContainer');
+    const wrapper = document.createElement('div');
+    wrapper.className = 'name-input-wrapper';
+    wrapper.id = 'nameWrapper_' + nameCounter;
+    
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.placeholder = 'Имя (например: Сергий)';
+    input.id = 'name_' + nameCounter;
+    input.autocomplete = 'off';
+    
+    input.addEventListener('input', function() {
+        // Удаляем следующее пустое поле
+        const nextWrapper = wrapper.nextElementSibling;
+        if (nextWrapper) {
+            const nextInput = nextWrapper.querySelector('input');
+            if (nextInput && nextInput.value.trim() === '') {
+                nextWrapper.remove();
+            }
+        }
+        
+        // Если в этом поле есть текст и следующего нет — создаём
+        if (this.value.trim() !== '') {
+            const nextExists = wrapper.nextElementSibling;
+            if (!nextExists) {
+                const allInputs = container.querySelectorAll('input');
+                let hasEmpty = false;
+                allInputs.forEach(inp => {
+                    if (inp.value.trim() === '') hasEmpty = true;
+                });
+                if (!hasEmpty) {
+                    addNameField();
+                }
+            }
+        }
+        updatePrice();
+    });
+    
+    wrapper.appendChild(input);
+    container.appendChild(wrapper);
+    
+    if (nameCounter === 1) {
+        input.focus();
+    }
+}
+
+function getAllNames() {
+    const container = document.getElementById('namesContainer');
+    const inputs = container.querySelectorAll('input');
+    const names = [];
+    inputs.forEach(inp => {
+        const val = inp.value.trim();
+        if (val !== '') names.push(val);
+    });
+    return names;
+}
+
+function clearNameFields() {
+    const container = document.getElementById('namesContainer');
+    container.innerHTML = '';
+    nameCounter = 0;
+    addNameField();
+}
+
+// ================================================================
+// 4. РАСЧЁТ ЦЕНЫ
+// ================================================================
+
+function updatePrice() {
+    const names = getAllNames();
+    const count = names.length;
+    const price = count * currentPricePerName;
+    document.getElementById('priceDisplay').textContent = 
+        `Цена: ${price} ₽ (${count} имён × ${currentPricePerName} ₽)`;
+    return { count, price };
+}
+
+// ================================================================
+// 5. ЗАГРУЗКА ДАННЫХ ИЗ SUPABASE
+// ================================================================
+
+async function loadServiceDates() {
+    const select = document.getElementById('serviceDate');
+    select.innerHTML = '<option value="">— загрузка... —</option>';
+    
+    try {
+        const { data, error } = await supabase
+            .from('service_dates')
+            .select('*')
+            .order('date', { ascending: true });
+        
+        if (error) throw error;
+        
+        select.innerHTML = '<option value="">— выберите дату —</option>';
+        data.forEach(d => {
+            const opt = document.createElement('option');
+            opt.value = d.id;
+            opt.textContent = formatDate(d.date);
+            opt.dataset.date = d.date;
+            select.appendChild(opt);
+        });
+    } catch (e) {
+        console.error('Ошибка загрузки дат:', e);
+        select.innerHTML = '<option value="">Ошибка загрузки</option>';
+    }
+}
+
+async function loadServiceTypes() {
+    const dateSelect = document.getElementById('serviceDate');
+    const typeSelect = document.getElementById('serviceType');
+    const dateId = dateSelect.value;
+    
+    if (!dateId) {
+        typeSelect.innerHTML = '<option value="">— сначала выберите дату —</option>';
+        return;
+    }
+    
+    typeSelect.innerHTML = '<option value="">— загрузка... —</option>';
+    
+    try {
+        // Получаем виды, доступные для этой даты
+        const { data, error } = await supabase
+            .from('date_service_types')
+            .select('service_type_id, service_types(name, price_per_name, id)')
+            .eq('date_id', dateId);
+        
+        if (error) throw error;
+        
+        typeSelect.innerHTML = '<option value="">— выберите вид —</option>';
+        allServiceTypes = [];
+        data.forEach(item => {
+            const st = item.service_types;
+            const opt = document.createElement('option');
+            opt.value = st.id;
+            opt.textContent = `${st.name} (${st.price_per_name} ₽/имя)`;
+            opt.dataset.price = st.price_per_name;
+            typeSelect.appendChild(opt);
+            allServiceTypes.push(st);
+        });
+        
+        if (data.length === 0) {
+            typeSelect.innerHTML = '<option value="">Нет доступных видов</option>';
+        }
+    } catch (e) {
+        console.error('Ошибка загрузки видов:', e);
+        typeSelect.innerHTML = '<option value="">Ошибка загрузки</option>';
+    }
+}
+
+async function loadAllServiceTypes() {
+    try {
+        const { data, error } = await supabase
+            .from('service_types')
+            .select('*')
+            .order('name');
+        if (error) throw error;
+        allServiceTypes = data;
+        return data;
+    } catch (e) {
+        console.error('Ошибка загрузки всех видов:', e);
+        return [];
+    }
+}
+
+// ================================================================
+// 6. ОТПРАВКА ЗАПИСКИ
+// ================================================================
+
+function getFormData() {
+    const dateSelect = document.getElementById('serviceDate');
+    const typeSelect = document.getElementById('serviceType');
+    const names = getAllNames();
+    
+    const dateId = dateSelect.value;
+    const serviceTypeId = typeSelect.value;
+    const selectedOption = typeSelect.options[typeSelect.selectedIndex];
+    const pricePerName = parseInt(selectedOption?.dataset?.price || 0);
+    
+    if (!dateId) {
+        showMessage('userMessage', 'Пожалуйста, выберите дату службы', 'error');
+        return null;
+    }
+    if (!serviceTypeId) {
+        showMessage('userMessage', 'Пожалуйста, выберите вид поминовения', 'error');
+        return null;
+    }
+    if (names.length === 0) {
+        showMessage('userMessage', 'Пожалуйста, введите хотя бы одно имя', 'error');
+        return null;
+    }
+    
+    const totalPrice = names.length * pricePerName;
+    
+    return { 
+        dateId, 
+        serviceTypeId, 
+        names, 
+        totalPrice,
+        pricePerName
+    };
+}
+
+async function saveNoteToSupabase(data, paid) {
+    try {
+        const { error } = await supabase
+            .from('notes')
+            .insert({
+                date_id: data.dateId,
+                service_type_id: data.serviceTypeId,
+                names: data.names,
+                total_price: data.totalPrice,
+                paid: paid,
+                user_name: 'Прихожанин' // Можно получить из VK
+            });
+        
+        if (error) throw error;
+        return true;
+    } catch (e) {
+        console.error('Ошибка сохранения:', e);
+        return false;
+    }
+}
+
+async function submitWithPayment() {
+    const data = getFormData();
+    if (!data) return;
+    
+    showMessage('userMessage', '⏳ Сохранение...', 'info');
+    
+    const saved = await saveNoteToSupabase(data, false);
+    if (!saved) {
+        showMessage('userMessage', '❌ Ошибка сохранения. Попробуйте ещё раз.', 'error');
+        return;
+    }
+    
+    // Показываем окно с реквизитами
+    showPaymentModal(data);
+}
+
+async function submitWithoutPayment() {
+    const data = getFormData();
+    if (!data) return;
+    
+    showMessage('userMessage', '⏳ Сохранение...', 'info');
+    
+    const saved = await saveNoteToSupabase(data, false);
+    if (!saved) {
+        showMessage('userMessage', '❌ Ошибка сохранения. Попробуйте ещё раз.', 'error');
+        return;
+    }
+    
+    showMessage('userMessage', 
+        '✅ Ваша записка принята!<br>🙏 Спаси Господи!', 
+        'success'
+    );
+    
+    // Очищаем форму
+    document.getElementById('serviceDate').value = '';
+    document.getElementById('serviceType').innerHTML = '<option value="">— выберите вид —</option>';
+    clearNameFields();
+    document.getElementById('priceDisplay').textContent = 'Цена: 0 ₽ (0 имён × 0 ₽)';
+}
+
+// ================================================================
+// 7. ОКНО ОПЛАТЫ
+// ================================================================
+
+function showPaymentModal(data) {
+    const overlay = document.getElementById('modalOverlay');
+    const title = document.getElementById('modalTitle');
+    const body = document.getElementById('modalBody');
+    
+    title.textContent = '💳 Оплата записки';
+    
+    const namesList = data.names.map(n => `✟ ${n}`).join('<br>');
+    
+    body.innerHTML = `
+        <div style="font-size:14px; line-height:1.8;">
+            <p><strong>Дата:</strong> ${document.getElementById('serviceDate').selectedOptions[0].text}</p>
+            <p><strong>Вид:</strong> ${document.getElementById('serviceType').selectedOptions[0].text}</p>
+            <p><strong>Имена:</strong><br>${namesList}</p>
+            
+            <div class="payment-total">
+                Итого: ${data.totalPrice} ₽
+            </div>
+            
+            <div class="payment-section">
+                <h3>Реквизиты для оплаты</h3>
+                <div class="payment-details">
+                    <p><span class="label">Получатель:</span><br>
+                    МЕСТНАЯ РЕЛИГИОЗНАЯ ОРГАНИЗАЦИЯ ПРАВОСЛАВНЫЙ ПРИХОД ХРАМА В ЧЕСТЬ ПОКРОВА ПРЕСВЯТОЙ БОГОРОДИЦЫ С. ДАНКОВО КАШИРСКОГО РАЙОНА ВОРОНЕЖСКОЙ ОБЛАСТИ РЕЛИГИОЗНОЙ ОРГАНИЗАЦИИ "ВОРОНЕЖСКАЯ ЕПАРХИЯ РУССКОЙ ПРАВОСЛАВНОЙ ЦЕРКВИ (МОСКОВСКИЙ ПАТРИАРХАТ)"</p>
+                    <p><span class="label">Расчётный счёт:</span> 40703810613190101103</p>
+                    <p><span class="label">Банк:</span> ЦЕНТРАЛЬНО-ЧЕРНОЗЕМНЫЙ БАНК ПАО СБЕРБАНК</p>
+                    <p><span class="label">БИК:</span> 042007681</p>
+                    <p><span class="label">Кор. счёт:</span> 30101810600000000681</p>
+                    <p><span class="label">ОГРН:</span> 1023600012644</p>
+                    <p><span class="label">ИНН:</span> 3613003694</p>
+                    <p><span class="label">КПП:</span> 361301001</p>
+                </div>
+            </div>
+            
+            <div style="text-align:center; margin:16px 0; font-size:20px; color:#2d7d46;">
+                🙏 Спаси Господи!
+            </div>
+            
+            <button class="btn btn-secondary" onclick="closeModal(); resetForm();">
+                🔙 Вернуться на главную
+            </button>
+        </div>
+    `;
+    
+    overlay.classList.add('active');
+}
+
+function resetForm() {
+    document.getElementById('serviceDate').value = '';
+    document.getElementById('serviceType').innerHTML = '<option value="">— выберите вид —</option>';
+    clearNameFields();
+    document.getElementById('priceDisplay').textContent = 'Цена: 0 ₽ (0 имён × 0 ₽)';
+    document.getElementById('userMessage').className = 'message';
+    document.getElementById('userMessage').style.display = 'none';
+}
+
+function closeModal() {
+    document.getElementById('modalOverlay').classList.remove('active');
+}
+
+// ================================================================
+// 8. АДМИН-ПАНЕЛЬ
+// ================================================================
+
+let adminPassword = 'admin'; // ← СМЕНИТЕ ПАРОЛЬ!
+
+function toggleMode() {
+    const userMode = document.getElementById('userMode');
+    const adminMode = document.getElementById('adminMode');
+    const btn = document.getElementById('toggleModeBtn');
+    
+    if (adminMode.classList.contains('active')) {
+        adminMode.classList.remove('active');
+        userMode.style.display = 'block';
+        btn.textContent = '🔐 Вход для администратора';
+    } else {
+        const password = prompt('Введите пароль администратора:');
+        if (password === adminPassword) {
+            adminMode.classList.add('active');
+            userMode.style.display = 'none';
+            btn.textContent = '🔓 Выйти из админки';
+            refreshAdminData();
+        } else if (password !== null) {
+            alert('❌ Неверный пароль');
+        }
+    }
+}
+
+async function refreshAdminData() {
+    const container = document.getElementById('adminContent');
+    container.innerHTML = '<p style="text-align:center;">⏳ Загрузка...</p>';
+    
+    try {
+        // Загружаем все записки с данными
+        const { data: notes, error } = await supabase
+            .from('notes')
+            .select(`
+                *,
+                service_dates(date),
+                service_types(name, price_per_name)
+            `)
+            .order('created_at', { ascending: false });
+        
+        if (error) throw error;
+        
+        // Группируем по датам
+        const datesMap = {};
+        notes.forEach(n => {
+            const dateStr = n.service_dates?.date || 'Без даты';
+            if (!datesMap[dateStr]) datesMap[dateStr] = [];
+            datesMap[dateStr].push(n);
+        });
+        
+        const dates = Object.keys(datesMap).sort();
+        
+        // Обновляем вкладки
+        const tabsContainer = document.getElementById('dateTabs');
+        tabsContainer.innerHTML = '';
+        dates.forEach(date => {
+            const tab = document.createElement('button');
+            tab.className = 'date-tab';
+            tab.textContent = formatDate(date);
+            tab.dataset.date = date;
+            tab.onclick = function() {
+                document.querySelectorAll('.date-tab').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+                renderAdminContent(date, datesMap[date]);
+            };
+            tabsContainer.appendChild(tab);
+        });
+        
+        if (dates.length > 0) {
+            const firstTab = tabsContainer.querySelector('.date-tab');
+            if (firstTab) {
+                firstTab.classList.add('active');
+                renderAdminContent(dates[0], datesMap[dates[0]]);
+            }
+        } else {
+            container.innerHTML = '<p style="color:#8a7a6a; text-align:center; padding:20px;">Пока нет поданных записок</p>';
+        }
+    } catch (e) {
+        console.error('Ошибка загрузки админ-данных:', e);
+        container.innerHTML = '<p style="color:#c62828; text-align:center;">❌ Ошибка загрузки</p>';
+    }
+}
+
+function renderAdminContent(date, notes) {
+    const container = document.getElementById('adminContent');
+    
+    // Группируем по типу
+    const typesMap = {};
+    notes.forEach(n => {
+        const typeName = n.service_types?.name || 'Неизвестный вид';
+        if (!typesMap[typeName]) typesMap[typeName] = [];
+        typesMap[typeName].push(n);
+    });
+    
+    let html = '';
+    for (const [type, items] of Object.entries(typesMap)) {
+        const price = items[0]?.service_types?.price_per_name || 0;
+        html += '<div class="service-section">';
+        html += `<h4>✝ ${type} <span class="price-tag">${price} ₽/имя</span></h4>`;
+        html += '<ul class="names-list">';
+        const allNames = [];
+        items.forEach(item => {
+            item.names.forEach(name => {
+                html += `<li>${name}</li>`;
+                allNames.push(name);
+            });
+        });
+        html += '</ul>';
+        html += `<button class="copy-btn" onclick="copyNames('${allNames.join(', ')}')">
+            📋 Копировать все имена (${allNames.length})
+        </button>`;
+        html += '</div>';
+    }
+    
+    if (html === '') {
+        html = '<p style="color:#8a7a6a; text-align:center; padding:20px;">Нет записок на эту дату</p>';
+    }
+    
+    container.innerHTML = html;
+}
+
+function copyNames(text) {
+    navigator.clipboard.writeText(text).then(() => {
+        alert('✅ Имена скопированы в буфер обмена!');
+    }).catch(() => {
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        textarea.remove();
+        alert('✅ Имена скопированы!');
+    });
+}
+
+// ================================================================
+// 9. УПРАВЛЕНИЕ ДАТАМИ И ВИДАМИ (для админа)
+// ================================================================
+
+function openAddDateModal() {
+    const overlay = document.getElementById('modalOverlay');
+    const title = document.getElementById('modalTitle');
+    const body = document.getElementById('modalBody');
+    
+    title.textContent = '📅 Добавить дату службы';
+    body.innerHTML = `
+        <div class="field-group">
+            <label>Дата:</label>
+            <input type="date" id="newDateInput" style="width:100%; padding:12px; border:1px solid #d4c4a8; border-radius:8px; font-size:16px;">
+        </div>
+        <button class="btn btn-primary" onclick="addNewDate()">➕ Добавить</button>
+        <button class="btn btn-secondary" onclick="closeModal()">Отмена</button>
+    `;
+    overlay.classList.add('active');
+}
+
+async function addNewDate() {
+    const dateInput = document.getElementById('newDateInput');
+    const date = dateInput.value;
+    
+    if (!date) {
+        alert('Пожалуйста, выберите дату');
+        return;
+    }
+    
+    try {
+        const { error } = await supabase
+            .from('service_dates')
+            .insert({ date: date });
+        
+        if (error) throw error;
+        
+        alert('✅ Дата добавлена!');
+        closeModal();
+        loadServiceDates();
+        refreshAdminData();
+    } catch (e) {
+        console.error('Ошибка:', e);
+        alert('❌ Ошибка добавления даты');
+    }
+}
+
+function openAddServiceTypeModal() {
+    const overlay = document.getElementById('modalOverlay');
+    const title = document.getElementById('modalTitle');
+    const body = document.getElementById('modalBody');
+    
+    title.textContent = '✝️ Добавить вид поминовения';
+    body.innerHTML = `
+        <div class="field-group">
+            <label>Название вида:</label>
+            <input type="text" id="newTypeName" placeholder="Например: Врачу душ и телес" style="width:100%; padding:12px; border:1px solid #d4c4a8; border-radius:8px; font-size:16px;">
+        </div>
+        <div class="field-group">
+            <label>Цена за одно имя (₽):</label>
+            <input type="number" id="newTypePrice" value="100" style="width:100%; padding:12px; border:1px solid #d4c4a8; border-radius:8px; font-size:16px;">
+        </div>
+        <button class="btn btn-primary" onclick="addNewServiceType()">➕ Добавить</button>
+        <button class="btn btn-secondary" onclick="closeModal()">Отмена</button>
+    `;
+    overlay.classList.add('active');
+}
+
+async function addNewServiceType() {
+    const name = document.getElementById('newTypeName').value.trim();
+    const price = parseInt(document.getElementById('newTypePrice').value);
+    
+    if (!name) {
+        alert('Введите название вида');
+        return;
+    }
+    if (!price || price < 0) {
+        alert('Введите корректную цену');
+        return;
+    }
+    
+    try {
+        const { error } = await supabase
+            .from('service_types')
+            .insert({ name: name, price_per_name: price });
+        
+        if (error) throw error;
+        
+        alert('✅ Вид добавлен!');
+        closeModal();
+        loadServiceTypes();
+        refreshAdminData();
+    } catch (e) {
+        console.error('Ошибка:', e);
+        alert('❌ Ошибка добавления вида');
+    }
+}
+
+async function manageDateServices() {
+    const overlay = document.getElementById('modalOverlay');
+    const title = document.getElementById('modalTitle');
+    const body = document.getElementById('modalBody');
+    
+    title.textContent = '📌 Назначить виды на дату';
+    
+    // Загружаем даты
+    const { data: dates } = await supabase
+        .from('service_dates')
+        .select('*')
+        .order('date', { ascending: true });
+    
+    // Загружаем все виды
+    const { data: types } = await supabase
+        .from('service_types')
+        .select('*')
+        .order('name');
+    
+    let html = `
+        <div class="field-group">
+            <label>Выберите дату:</label>
+            <select id="manageDateSelect" style="width:100%; padding:12px; border:1px solid #d4c4a8; border-radius:8px; font-size:16px;">
+                <option value="">— выберите —</option>
+    `;
+    dates.forEach(d => {
+        html += `<option value="${d.id}">${formatDate(d.date)}</option>`;
+    });
+    html += `</select></div>`;
+    
+    html += `
+        <div class="field-group">
+            <label>Доступные виды:</label>
+            <div id="manageTypesContainer">
+    `;
+    types.forEach(t => {
+        html += `
+            <div style="display:flex; align-items:center; gap:8px; margin:4px 0;">
+                <input type="checkbox" id="type_${t.id}" value="${t.id}">
+                <label for="type_${t.id}">${t.name} (${t.price_per_name} ₽)</label>
+            </div>
+        `;
+    });
+    html += `</div></div>`;
+    
+    html += `
+        <button class="btn btn-primary" onclick="saveDateServices()">💾 Сохранить</button>
+        <button class="btn btn-secondary" onclick="closeModal()">Отмена</button>
+    `;
+    
+    body.innerHTML = html;
+    overlay.classList.add('active');
+    
+    // Загружаем текущие связи для выбранной даты
+    document.getElementById('manageDateSelect').onchange = async function() {
+        const dateId = this.value;
+        if (!dateId) return;
+        
+        const { data: links } = await supabase
+            .from('date_service_types')
+            .select('service_type_id')
+            .eq('date_id', dateId);
+        
+        const linkedIds = links.map(l => l.service_type_id);
+        document.querySelectorAll('#manageTypesContainer input[type="checkbox"]').forEach(cb => {
+            cb.checked = linkedIds.includes(parseInt(cb.value));
+        });
+    };
+}
+
+async function saveDateServices() {
+    const dateId = document.getElementById('manageDateSelect').value;
+    if (!dateId) {
+        alert('Выберите дату');
+        return;
+    }
+    
+    const checked = [];
+    document.querySelectorAll('#manageTypesContainer input[type="checkbox"]:checked').forEach(cb => {
+        checked.push(parseInt(cb.value));
+    });
+    
+    try {
+        // Удаляем старые связи
+        await supabase
+            .from('date_service_types')
+            .delete()
+            .eq('date_id', dateId);
+        
+        // Добавляем новые
+        if (checked.length > 0) {
+            const inserts = checked.map(typeId => ({
+                date_id: dateId,
+                service_type_id: typeId
+            }));
+            const { error } = await supabase
+                .from('date_service_types')
+                .insert(inserts);
+            if (error) throw error;
+        }
+        
+        alert('✅ Сохранено!');
+        closeModal();
+        loadServiceTypes();
+    } catch (e) {
+        console.error('Ошибка:', e);
+        alert('❌ Ошибка сохранения');
+    }
+}
+
+// ================================================================
+// 10. ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
+// ================================================================
+
+function formatDate(dateStr) {
+    const d = new Date(dateStr);
+    return d.toLocaleDateString('ru-RU', { 
+        day: 'numeric', 
+        month: 'long',
+        year: 'numeric'
+    });
+}
+
+function showMessage(elementId, text, type) {
+    const el = document.getElementById(elementId);
+    el.className = 'message ' + type;
+    el.innerHTML = text;
+    el.style.display = 'block';
+    
+    clearTimeout(el._timeout);
+    el._timeout = setTimeout(() => {
+        el.style.display = 'none';
+    }, 10000);
+}
+
+// ================================================================
+// 11. ИНИЦИАЛИЗАЦИЯ
+// ================================================================
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Загружаем даты
+    loadServiceDates();
+    
+    // Создаём первое поле для имени
+    addNameField();
+    
+    console.log('🕯️ Приложение храма загружено!');
+    console.log('📝 Пароль админа:', adminPassword);
+    console.log('🔗 Supabase:', SUPABASE_URL);
+});
+</script>
+
+</body>
+</html>
