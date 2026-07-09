@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Храм Покрова Пресвятой Богородицы</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -353,6 +352,11 @@
             border-radius: 8px;
             border: 1px solid #c9ad7a;
         }
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #8a7a6a;
+        }
         @media (max-width: 480px) {
             .note-card { padding: 20px 16px 24px; }
             .buttons-row { flex-direction: column; }
@@ -373,14 +377,14 @@
     
     <div class="field-group">
         <label>📅 Дата службы</label>
-        <select id="serviceDate" onchange="loadServiceTypes()">
+        <select id="serviceDate" onchange="window.loadServiceTypes()">
             <option value="">— загрузка дат... —</option>
         </select>
     </div>
     
     <div class="field-group">
         <label>✝️ Вид поминовения</label>
-        <select id="serviceType" onchange="updatePrice()">
+        <select id="serviceType" onchange="window.updatePrice()">
             <option value="">— сначала выберите дату —</option>
         </select>
     </div>
@@ -394,8 +398,8 @@
     <div id="priceDisplay">Цена: 0 ₽</div>
     
     <div class="buttons-row">
-        <button class="btn btn-primary" onclick="submitWithPayment()">💰 К оплате</button>
-        <button class="btn btn-secondary" onclick="submitWithoutPayment()">🙏 Отправить</button>
+        <button class="btn btn-primary" onclick="window.submitWithPayment()">💰 К оплате</button>
+        <button class="btn btn-secondary" onclick="window.submitWithoutPayment()">🙏 Отправить</button>
     </div>
     
     <div id="userMessage" class="message"></div>
@@ -405,7 +409,7 @@
 <div id="adminMode" class="admin-panel">
     <div class="admin-header">
         <h2>📋 Управление записками</h2>
-        <button class="btn-admin" onclick="refreshAdminData()">🔄 Обновить</button>
+        <button class="btn-admin" onclick="window.refreshAdminData()">🔄 Обновить</button>
     </div>
     <div class="date-tabs" id="dateTabs"></div>
     <div id="adminContent">
@@ -413,9 +417,9 @@
     </div>
     <div style="margin-top:20px; border-top:1px solid #d4c4a8; padding-top:16px;">
         <div style="display:flex; gap:10px; flex-wrap:wrap;">
-            <button class="btn-admin" onclick="openAddDateModal()">➕ Добавить дату</button>
-            <button class="btn-admin" onclick="openAddServiceTypeModal()">➕ Добавить вид</button>
-            <button class="btn-admin" onclick="manageDateServices()">📌 Назначить виды</button>
+            <button class="btn-admin" onclick="window.openAddDateModal()">➕ Добавить дату</button>
+            <button class="btn-admin" onclick="window.openAddServiceTypeModal()">➕ Добавить вид</button>
+            <button class="btn-admin" onclick="window.manageDateServices()">📌 Назначить виды</button>
         </div>
     </div>
 </div>
@@ -423,7 +427,7 @@
 <!-- ===== МОДАЛЬНОЕ ОКНО ===== -->
 <div class="modal-overlay" id="modalOverlay">
     <div class="modal-box">
-        <button class="close-btn" onclick="closeModal()">✕</button>
+        <button class="close-btn" onclick="window.closeModal()">✕</button>
         <h2 id="modalTitle">Заголовок</h2>
         <div id="modalBody"></div>
     </div>
@@ -431,39 +435,40 @@
 
 <!-- ===== ПЕРЕКЛЮЧАТЕЛЬ ===== -->
 <div class="mode-toggle">
-    <button id="toggleModeBtn" class="btn-admin" onclick="toggleMode()">
+    <button id="toggleModeBtn" class="btn-admin" onclick="window.toggleMode()">
         🔐 Вход для администратора
     </button>
 </div>
 
-<script>
+<!-- ===== ИСПОЛЬЗУЕМ IMPORT MAP ДЛЯ SUPABASE ===== -->
+<script type="importmap">
+{
+    "imports": {
+        "@supabase/supabase-js": "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm"
+    }
+}
+</script>
+
+<!-- ===== ОСНОВНОЙ КОД ===== -->
+<script type="module">
 // ================================================================
 // 1. НАСТРОЙКИ SUPABASE — ВСТАВЬТЕ СВОИ ДАННЫЕ!
 // ================================================================
 
+import { createClient } from '@supabase/supabase-js';
+
 const SUPABASE_URL = 'https://fupntgnmagobmpjqrbbf.supabase.co';      // ← ЗАМЕНИТЕ
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ1cG50Z25tYWdvYm1wanFyYmJmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM2MjYxMzYsImV4cCI6MjA5OTIwMjEzNn0.Iv6dXfi_DdfjOae8jmdMi9-4LrbNNEUNj5Dlnmsa4EI';                       // ← ЗАМЕНИТЕ
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ1cG50Z25tYWdvYm1wanFyYmJmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQwODU2NjksImV4cCI6MjA1OTY2MTY2OX0.hVY1LYXaQibJ4y2DJ6agG5sxTHe_wr2-HqW9oSvcKmc';                       // ← ЗАМЕНИТЕ
 
 console.log('🔍 Проверка: SUPABASE_URL =', SUPABASE_URL);
 console.log('🔍 Проверка: SUPABASE_KEY =', SUPABASE_KEY ? '✅ Ключ установлен' : '❌ Ключ отсутствует');
 
-// Проверяем, что ключи не пустые
-if (SUPABASE_URL.includes('ВАШ_ПРОЕКТ') || SUPABASE_KEY.includes('ВАШ_ANON_КЛЮЧ')) {
-    alert('⚠️ ВНИМАНИЕ! Вы не вставили свои ключи Supabase!\n\n' +
-          '1. Зайдите на supabase.com\n' +
-          '2. Выберите проект → Settings → API\n' +
-          '3. Скопируйте Project URL и anon public ключ\n' +
-          '4. Вставьте их в код (строки с SUPABASE_URL и SUPABASE_KEY)');
-}
+// Инициализация Supabase
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+console.log('✅ Supabase инициализирован');
 
-// Инициализация Supabase (только один раз!)
-let supabaseClientInstance = null;
-try {
-    supabaseClientInstance = supabaseClient(SUPABASE_URL, SUPABASE_KEY);
-    console.log('✅ Supabase инициализирован');
-} catch (e) {
-    console.error('❌ Ошибка инициализации Supabase:', e);
-}
+// Делаем supabase доступным глобально для других функций
+window.supabase = supabase;
 
 // ================================================================
 // 2. ПЕРЕМЕННЫЕ
@@ -558,15 +563,9 @@ async function loadServiceDates() {
     const select = document.getElementById('serviceDate');
     select.innerHTML = '<option value="">— загрузка... —</option>';
     
-    if (!supabaseClientInstance) {
-        select.innerHTML = '<option value="">❌ Supabase не инициализирован</option>';
-        showMessage('userMessage', 'Ошибка: Supabase не инициализирован. Проверьте ключи.', 'error');
-        return;
-    }
-    
     try {
         console.log('🔄 Загрузка дат...');
-        const { data, error } = await supabaseClientInstance
+        const { data, error } = await supabase
             .from('service_dates')
             .select('*')
             .order('date', { ascending: true });
@@ -604,16 +603,11 @@ async function loadServiceTypes() {
         return;
     }
     
-    if (!supabaseClientInstance) {
-        typeSelect.innerHTML = '<option value="">❌ Supabase не инициализирован</option>';
-        return;
-    }
-    
     typeSelect.innerHTML = '<option value="">— загрузка... —</option>';
     
     try {
         console.log('🔄 Загрузка видов для даты ID:', dateId);
-        const { data, error } = await supabaseClientInstance
+        const { data, error } = await supabase
             .from('date_service_types')
             .select('service_type_id, service_types(name, price_per_name, id)')
             .eq('date_id', dateId);
@@ -680,14 +674,9 @@ function getFormData() {
 }
 
 async function saveNoteToSupabase(data, paid) {
-    if (!supabaseClientInstance) {
-        showMessage('userMessage', '❌ Supabase не инициализирован', 'error');
-        return false;
-    }
-    
     try {
         console.log('🔄 Сохранение записки:', data);
-        const { error } = await supabaseClientInstance
+        const { error } = await supabase
             .from('notes')
             .insert({
                 date_id: data.dateId,
@@ -775,7 +764,7 @@ function showPaymentModal(data) {
             <div style="text-align:center; margin:16px 0; font-size:20px; color:#2d7d46;">
                 🙏 Спаси Господи!
             </div>
-            <button class="btn btn-secondary" onclick="closeModal(); resetForm();">
+            <button class="btn btn-secondary" onclick="window.closeModal(); window.resetForm();">
                 🔙 Вернуться на главную
             </button>
         </div>
@@ -827,14 +816,9 @@ async function refreshAdminData() {
     const container = document.getElementById('adminContent');
     container.innerHTML = '<p style="text-align:center;">⏳ Загрузка...</p>';
     
-    if (!supabaseClientInstance) {
-        container.innerHTML = '<p style="color:#c62828;">❌ Supabase не инициализирован</p>';
-        return;
-    }
-    
     try {
         console.log('🔄 Загрузка данных для админа...');
-        const { data: notes, error } = await supabaseClientInstance
+        const { data: notes, error } = await supabase
             .from('notes')
             .select('*, service_dates(date), service_types(name, price_per_name)')
             .order('created_at', { ascending: false });
@@ -907,7 +891,7 @@ function renderAdminContent(date, notes) {
             });
         });
         html += '</ul>';
-        html += `<button class="copy-btn" onclick="copyNames('${allNames.join(', ')}')">
+        html += `<button class="copy-btn" onclick="window.copyNames('${allNames.join(', ')}')">
             📋 Копировать все (${allNames.length})
         </button>`;
         html += '</div>';
@@ -948,23 +932,18 @@ function openAddDateModal() {
             <label>Дата:</label>
             <input type="date" id="newDateInput" style="width:100%; padding:12px; border:1px solid #d4c4a8; border-radius:8px; font-size:16px;">
         </div>
-        <button class="btn btn-primary" onclick="addNewDate()">➕ Добавить</button>
-        <button class="btn btn-secondary" onclick="closeModal()">Отмена</button>
+        <button class="btn btn-primary" onclick="window.addNewDate()">➕ Добавить</button>
+        <button class="btn btn-secondary" onclick="window.closeModal()">Отмена</button>
     `;
     overlay.classList.add('active');
 }
 
 async function addNewDate() {
-    if (!supabaseClientInstance) {
-        alert('❌ Supabase не инициализирован');
-        return;
-    }
-    
     const date = document.getElementById('newDateInput').value;
     if (!date) { alert('Выберите дату'); return; }
     
     try {
-        const { error } = await supabaseClientInstance.from('service_dates').insert({ date });
+        const { error } = await supabase.from('service_dates').insert({ date });
         if (error) throw error;
         alert('✅ Дата добавлена!');
         closeModal();
@@ -990,25 +969,20 @@ function openAddServiceTypeModal() {
             <label>Цена за имя (₽):</label>
             <input type="number" id="newTypePrice" value="100" style="width:100%; padding:12px; border:1px solid #d4c4a8; border-radius:8px; font-size:16px;">
         </div>
-        <button class="btn btn-primary" onclick="addNewServiceType()">➕ Добавить</button>
-        <button class="btn btn-secondary" onclick="closeModal()">Отмена</button>
+        <button class="btn btn-primary" onclick="window.addNewServiceType()">➕ Добавить</button>
+        <button class="btn btn-secondary" onclick="window.closeModal()">Отмена</button>
     `;
     overlay.classList.add('active');
 }
 
 async function addNewServiceType() {
-    if (!supabaseClientInstance) {
-        alert('❌ Supabase не инициализирован');
-        return;
-    }
-    
     const name = document.getElementById('newTypeName').value.trim();
     const price = parseInt(document.getElementById('newTypePrice').value);
     if (!name) { alert('Введите название'); return; }
     if (!price || price < 0) { alert('Введите цену'); return; }
     
     try {
-        const { error } = await supabaseClientInstance.from('service_types').insert({ name, price_per_name: price });
+        const { error } = await supabase.from('service_types').insert({ name, price_per_name: price });
         if (error) throw error;
         alert('✅ Вид добавлен!');
         closeModal();
@@ -1020,19 +994,14 @@ async function addNewServiceType() {
 }
 
 async function manageDateServices() {
-    if (!supabaseClientInstance) {
-        alert('❌ Supabase не инициализирован');
-        return;
-    }
-    
     const overlay = document.getElementById('modalOverlay');
     const title = document.getElementById('modalTitle');
     const body = document.getElementById('modalBody');
     
     title.textContent = '📌 Назначить виды на дату';
     
-    const { data: dates } = await supabaseClientInstance.from('service_dates').select('*').order('date');
-    const { data: types } = await supabaseClientInstance.from('service_types').select('*').order('name');
+    const { data: dates } = await supabase.from('service_dates').select('*').order('date');
+    const { data: types } = await supabase.from('service_types').select('*').order('name');
     
     let html = `
         <div class="field-group">
@@ -1057,8 +1026,8 @@ async function manageDateServices() {
         `;
     });
     html += `</div></div>
-        <button class="btn btn-primary" onclick="saveDateServices()">💾 Сохранить</button>
-        <button class="btn btn-secondary" onclick="closeModal()">Отмена</button>
+        <button class="btn btn-primary" onclick="window.saveDateServices()">💾 Сохранить</button>
+        <button class="btn btn-secondary" onclick="window.closeModal()">Отмена</button>
     `;
     
     body.innerHTML = html;
@@ -1067,7 +1036,7 @@ async function manageDateServices() {
     document.getElementById('manageDateSelect').onchange = async function() {
         const dateId = this.value;
         if (!dateId) return;
-        const { data: links } = await supabaseClientInstance
+        const { data: links } = await supabase
             .from('date_service_types')
             .select('service_type_id')
             .eq('date_id', dateId);
@@ -1079,11 +1048,6 @@ async function manageDateServices() {
 }
 
 async function saveDateServices() {
-    if (!supabaseClientInstance) {
-        alert('❌ Supabase не инициализирован');
-        return;
-    }
-    
     const dateId = document.getElementById('manageDateSelect').value;
     if (!dateId) { alert('Выберите дату'); return; }
     
@@ -1093,10 +1057,10 @@ async function saveDateServices() {
     });
     
     try {
-        await supabaseClientInstance.from('date_service_types').delete().eq('date_id', dateId);
+        await supabase.from('date_service_types').delete().eq('date_id', dateId);
         if (checked.length > 0) {
             const inserts = checked.map(typeId => ({ date_id: dateId, service_type_id: typeId }));
-            const { error } = await supabaseClientInstance.from('date_service_types').insert(inserts);
+            const { error } = await supabase.from('date_service_types').insert(inserts);
             if (error) throw error;
         }
         alert('✅ Сохранено!');
@@ -1126,24 +1090,40 @@ function showMessage(elementId, text, type) {
 }
 
 // ================================================================
-// 11. ИНИЦИАЛИЗАЦИЯ
+// 11. ДЕЛАЕМ ФУНКЦИИ ДОСТУПНЫМИ ГЛОБАЛЬНО
 // ================================================================
 
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('🕯️ Приложение храма запущено!');
-    console.log('📝 Пароль админа:', ADMIN_PASSWORD);
-    
-    // Проверяем, инициализирован ли Supabase
-    if (supabaseClientInstance) {
-        console.log('✅ Supabase готов к работе');
-        loadServiceDates();
-    } else {
-        console.error('❌ Supabase НЕ инициализирован! Проверьте ключи.');
-        document.getElementById('serviceDate').innerHTML = '<option value="">❌ Ошибка подключения</option>';
-    }
-    
-    addNameField();
-});
+window.loadServiceDates = loadServiceDates;
+window.loadServiceTypes = loadServiceTypes;
+window.updatePrice = updatePrice;
+window.submitWithPayment = submitWithPayment;
+window.submitWithoutPayment = submitWithoutPayment;
+window.toggleMode = toggleMode;
+window.refreshAdminData = refreshAdminData;
+window.copyNames = copyNames;
+window.openAddDateModal = openAddDateModal;
+window.addNewDate = addNewDate;
+window.openAddServiceTypeModal = openAddServiceTypeModal;
+window.addNewServiceType = addNewServiceType;
+window.manageDateServices = manageDateServices;
+window.saveDateServices = saveDateServices;
+window.closeModal = closeModal;
+window.resetForm = resetForm;
+
+// ================================================================
+// 12. ИНИЦИАЛИЗАЦИЯ
+// ================================================================
+
+console.log('🕯️ Приложение храма запущено!');
+console.log('📝 Пароль админа:', ADMIN_PASSWORD);
+
+// Загружаем даты
+await loadServiceDates();
+
+// Создаём первое поле для имени
+addNameField();
+
+console.log('✅ Приложение готово к работе!');
 </script>
 </body>
 </html>
